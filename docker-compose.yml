@@ -1,0 +1,24 @@
+# Infraestrutura local de desenvolvimento.
+# Use com "pnpm dev" para rodar a API localmente.
+# Para rodar API + Postgres juntos em Docker, use docker-compose.dev.yml.
+# Para produção, use docker-compose.prod.yml.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: botchef-postgres
+    environment:
+      POSTGRES_USER: botchef
+      POSTGRES_PASSWORD: botchef
+      POSTGRES_DB: botchef
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botchef -d botchef"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

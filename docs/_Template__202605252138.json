@@ -1,0 +1,57 @@
+{
+"Template": [
+	{
+		"id" : "5b493e04-606b-482d-b35c-eee7a24309c2",
+		"userId" : "e9a5d0a3-0a7e-41be-8cf6-fab896bb2cba",
+		"name" : "Pedido Confirmado",
+		"body" : "🍽️ Olá, {{nome}!}\r\n\r\nSeu pedido #{{pedido}} foi confirmado com sucesso ✅\r\n\r\nAgora nossa equipe já começou a organizar tudo por aqui.\r\nEm breve enviaremos uma nova atualização do status do seu pedido.\r\n\r\nObrigado por pedir com a gente! ❤️",
+		"trigger" : "order_confirmed",
+		"createdAt" : "2026-05-25T14:32:01.589Z",
+		"updatedAt" : "2026-05-25T14:32:01.589Z"
+	},
+	{
+		"id" : "a21266de-0e6d-4613-bdc2-2f75fc0a42d8",
+		"userId" : "e9a5d0a3-0a7e-41be-8cf6-fab896bb2cba",
+		"name" : "Pedido em Preparo",
+		"body" : "👨‍🍳 Seu pedido #{{pedido}} já está em preparo!\r\n\r\nEstamos preparando tudo com muito cuidado para enviar o mais rápido possível 🚀\r\nAssim que sair para entrega, avisamos você por aqui 😉",
+		"trigger" : "order_preparing",
+		"createdAt" : "2026-05-25T14:33:08.154Z",
+		"updatedAt" : "2026-05-25T14:33:08.154Z"
+	},
+	{
+		"id" : "9f16ff23-6c69-4881-a612-8e645c0a2509",
+		"userId" : "e9a5d0a3-0a7e-41be-8cf6-fab896bb2cba",
+		"name" : "Pedido em Entrega",
+		"body" : "🛵 Pedido #{{pedido}} em rota de entrega!\r\n\r\nSeu pedido já saiu e está indo até você 😉",
+		"trigger" : "order_delivering",
+		"createdAt" : "2026-05-25T14:34:43.486Z",
+		"updatedAt" : "2026-05-25T14:34:43.486Z"
+	},
+	{
+		"id" : "4e934918-a904-4e3f-872d-b9219687f503",
+		"userId" : "e9a5d0a3-0a7e-41be-8cf6-fab896bb2cba",
+		"name" : "Pedido Entregue",
+		"body" : "✅ Pedido #{{pedido}} entregue com sucesso!\r\n\r\nEsperamos que você aproveite seu pedido 😋\r\nObrigado por escolher a {{restaurante}}. ❤️\r\n\r\nAté a próxima!",
+		"trigger" : "order_delivered",
+		"createdAt" : "2026-05-25T14:38:20.809Z",
+		"updatedAt" : "2026-05-25T14:38:20.809Z"
+	},
+	{
+		"id" : "bd4a08b8-8832-4607-aa77-ccbdbe2186d9",
+		"userId" : "e9a5d0a3-0a7e-41be-8cf6-fab896bb2cba",
+		"name" : "Pedido Cancelado",
+		"body" : "😔 Infelizmente seu pedido #{{pedido}} precisou ser cancelado.\r\n\r\nPedimos desculpas pelo transtorno e agradecemos sua compreensão.\r\nQualquer dúvida, estamos disponíveis para atendimento.",
+		"trigger" : "order_cancelled",
+		"createdAt" : "2026-05-25T14:39:24.526Z",
+		"updatedAt" : "2026-05-25T14:39:24.526Z"
+	},
+	{
+		"id" : "6f5e5d82-5a7c-4235-b0a9-8d67a214e27b",
+		"userId" : "e9a5d0a3-0a7e-41be-8cf6-fab896bb2cba",
+		"name" : "Pronto para Retirada",
+		"body" : "✅ Pedido #{{pedido}} pronto para retirada!\r\n\r\nPode vir buscar 😉",
+		"trigger" : "order_ready",
+		"createdAt" : "2026-05-25T14:43:13.729Z",
+		"updatedAt" : "2026-05-25T14:43:13.729Z"
+	}
+]}

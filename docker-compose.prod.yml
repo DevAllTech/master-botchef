@@ -1,0 +1,54 @@
+# Stack de produção (API + Postgres).
+# O frontend é deployado no Vercel separadamente.
+#
+# Uso:
+#   cp .env.example .env.prod
+#   # Preencher .env.prod com os valores reais
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Para atualizar a API após mudanças de código:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build api
+#
+# O entrypoint da API roda "prisma migrate deploy" antes de iniciar o servidor.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: botchef-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-botchef}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-botchef}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-botchef} -d ${POSTGRES_DB:-botchef}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: botchef-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-botchef}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-botchef}
+      JWT_SECRET: ${JWT_SECRET}
+      API_PORT: "3001"
+      API_HOST: "0.0.0.0"
+      API_PUBLIC_URL: ${API_PUBLIC_URL}
+      UAZAPI_BASE_URL: ${UAZAPI_BASE_URL}
+      UAZAPI_GLOBAL_TOKEN: ${UAZAPI_GLOBAL_TOKEN}
+      WEB_URL: ${WEB_URL}
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_prod_data:

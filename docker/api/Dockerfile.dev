@@ -1,0 +1,22 @@
+# Imagem de desenvolvimento com hot-reload
+# As deps ficam no layer da imagem; apenas o source é montado como volume.
+FROM node:22-alpine
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+# Copia apenas manifests para instalar deps (melhor cache)
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY apps/api/package.json           ./apps/api/
+COPY packages/types/package.json     ./packages/types/
+COPY packages/types/src/             ./packages/types/src/
+COPY prisma/                         ./prisma/
+
+RUN pnpm install
+
+# Gera o Prisma Client dentro da imagem
+RUN pnpm db:generate
+
+# O source (apps/api/src) é montado como volume no compose
+EXPOSE 3001
+CMD ["pnpm", "--filter", "api", "dev"]

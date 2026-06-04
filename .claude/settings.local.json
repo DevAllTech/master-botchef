@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --version)",
+      "Bash(rtk docker *)",
+      "Bash(Test-Path \"C:/Users/alans/Documents/dev/sources/master/master-botchef/.env\")",
+      "Bash(curl -s -X POST https://free.uazapi.com/instance/connect -H 'Content-Type: application/json' -H 'token: ZaW1qwTEkuq7Ub1cBUuyMiK5bNSu3nnMQ9lh7klElc2clSRV8t' -d '{}')",
+      "Bash(curl -s https://free.uazapi.com/instance/status -H 'token: ZaW1qwTEkuq7Ub1cBUuyMiK5bNSu3nnMQ9lh7klElc2clSRV8t')",
+      "WebFetch(domain:docs.uazapi.com)"
+    ]
+  }
+}
