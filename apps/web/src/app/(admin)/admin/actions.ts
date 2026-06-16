@@ -43,6 +43,16 @@ export async function updateClientSuffix(_: unknown, formData: FormData) {
   }
 }
 
+export async function checkSuffixAction(suffix: string): Promise<{ valid?: boolean; error?: string }> {
+  const token = await getToken()
+  if (!token) return { error: 'Não autenticado.' }
+  try {
+    return await api.admin.checkSuffix(token, suffix)
+  } catch {
+    return { error: 'Erro ao verificar suffix.' }
+  }
+}
+
 export async function toggleClientStatus(id: string, active: boolean) {
   const token = await getToken()
   if (!token) return { error: 'Não autenticado.' }

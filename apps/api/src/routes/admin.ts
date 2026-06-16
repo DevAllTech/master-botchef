@@ -19,6 +19,21 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // Todas as rotas /admin exigem autenticação de admin
   fastify.addHook('preHandler', fastify.authenticateAdmin)
 
+  // Verificar se um suffix existe no MenuChef (sem modificar dados)
+  fastify.get('/admin/check-suffix', async (request, reply) => {
+    const { suffix } = request.query as { suffix?: string }
+    if (!suffix?.trim()) {
+      return reply.status(400).send({ error: 'suffix é obrigatório' })
+    }
+    try {
+      const result = await MenuChefService.validateSuffix(suffix.trim())
+      return reply.send(result)
+    } catch (err) {
+      fastify.log.error({ err }, 'Falha ao validar suffix no MenuChef')
+      return reply.status(502).send({ error: 'Não foi possível verificar o suffix no MenuChef.' })
+    }
+  })
+
   // Listar todos os clientes
   fastify.get('/admin/clients', async (_request, reply) => {
     const clients = await prisma.user.findMany({

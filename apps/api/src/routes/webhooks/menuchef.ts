@@ -67,8 +67,9 @@ const menuChefWebhookRoute: FastifyPluginAsync = async (fastify) => {
       )
       return reply.status(401).send({ error: 'Suffix não corresponde à instância.' })
     }
-    // Normaliza o telefone removendo o "+" para consistência com o Uazapi
-    const phone = result.data.phone.replace(/^\+/, '')
+    // Normaliza o telefone: apenas dígitos + garante código de país 55 (BR)
+    const rawPhone = result.data.phone.replace(/\D/g, '')
+    const phone = rawPhone.startsWith('55') ? rawPhone : `55${rawPhone}`
 
     const template = await prisma.template.findFirst({
       where: { userId: user.id, trigger: status },

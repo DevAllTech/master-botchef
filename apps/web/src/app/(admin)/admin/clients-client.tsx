@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { createClientAction, toggleClientStatus, resetClientPassword, updateClientSuffix } from './actions'
+import { createClientAction, toggleClientStatus, resetClientPassword, updateClientSuffix, checkSuffixAction } from './actions'
 import type { ClientUser } from '@/lib/api'
 import {
   Plus, X, Wifi, WifiOff, KeyRound, UserX, UserCheck, AlertCircle, Users, Hash,
+  CheckCircle2, XCircle, Loader2,
 } from 'lucide-react'
 
 export function ClientsPanel({ initialClients }: { initialClients: ClientUser[] }) {
@@ -269,10 +270,23 @@ function EditSuffixModal({ clientId, clientName, currentSuffix, onClose }: {
   onClose: () => void
 }) {
   const [state, action, isPending] = useActionState(updateClientSuffix, undefined)
+  const [suffixValue, setSuffixValue] = useState(currentSuffix ?? '')
+  const [testResult, setTestResult] = useState<'valid' | 'invalid' | 'error' | null>(null)
+  const [isTesting, startTestTransition] = useTransition()
 
   useEffect(() => {
     if (state?.success) onClose()
   }, [state?.success]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTest = () => {
+    if (!suffixValue.trim()) return
+    setTestResult(null)
+    startTestTransition(async () => {
+      const result = await checkSuffixAction(suffixValue.trim())
+      if (result.error) setTestResult('error')
+      else setTestResult(result.valid ? 'valid' : 'invalid')
+    })
+  }
 
   if (state?.success) return null
 
@@ -298,13 +312,41 @@ function EditSuffixModal({ clientId, clientName, currentSuffix, onClose }: {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="edit-suffix">Chave do contrato</Label>
-            <Input
-              id="edit-suffix"
-              name="menuChefSuffix"
-              placeholder="ex: meu-restaurante"
-              defaultValue={currentSuffix ?? ''}
-              disabled={isPending}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="edit-suffix"
+                name="menuChefSuffix"
+                placeholder="ex: meu-restaurante"
+                value={suffixValue}
+                onChange={(e) => { setSuffixValue(e.target.value); setTestResult(null) }}
+                disabled={isPending}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTest}
+                disabled={isTesting || !suffixValue.trim() || isPending}
+                className="shrink-0"
+              >
+                {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Testar'}
+              </Button>
+            </div>
+            {testResult === 'valid' && (
+              <p className="flex items-center gap-1 text-xs text-green-600">
+                <CheckCircle2 className="h-3 w-3" /> Suffix válido no MenuChef
+              </p>
+            )}
+            {testResult === 'invalid' && (
+              <p className="flex items-center gap-1 text-xs text-red-600">
+                <XCircle className="h-3 w-3" /> Suffix não encontrado no MenuChef
+              </p>
+            )}
+            {testResult === 'error' && (
+              <p className="flex items-center gap-1 text-xs text-yellow-600">
+                <AlertCircle className="h-3 w-3" /> Erro ao verificar. Tente novamente.
+              </p>
+            )}
             <p className="text-xs text-gray-400">Deixe em branco para remover o vínculo.</p>
           </div>
           <div className="flex justify-end gap-2">

@@ -27,4 +27,23 @@ export const MenuChefService = {
       )
     }
   },
+
+  async validateSuffix(suffix: string): Promise<{ valid: boolean }> {
+    if (!BASE_URL || !BOTCHEF_SECRET) {
+      throw new Error('MENUCHEF_BASE_URL ou MENUCHEF_BOTCHEF_SECRET não configurados')
+    }
+
+    const res = await fetch(
+      `${BASE_URL}/integrations/botchef/validate/${encodeURIComponent(suffix)}`,
+      { headers: { 'x-botchef-secret': BOTCHEF_SECRET } },
+    )
+
+    if (res.status === 404) return { valid: false }
+
+    if (!res.ok) {
+      throw new Error(`MenuChef validate falhou [${res.status}]`)
+    }
+
+    return { valid: true }
+  },
 }

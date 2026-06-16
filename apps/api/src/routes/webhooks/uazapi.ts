@@ -89,7 +89,7 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
       }
 
       const chatid = msg.chatid ?? ''
-      const phone = chatid.split('@')[0]
+      const phone = chatid.split('@')[0].replace(/\D/g, '')
 
       if (!phone) {
         return reply.send({ ok: true })

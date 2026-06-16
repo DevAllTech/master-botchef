@@ -111,6 +111,13 @@ export const api = {
         { method: 'PATCH', body: JSON.stringify({ menuChefSuffix }) },
         token,
       ),
+
+    checkSuffix: (token: string, suffix: string) =>
+      apiFetch<{ valid: boolean }>(
+        `/admin/check-suffix?suffix=${encodeURIComponent(suffix)}`,
+        {},
+        token,
+      ),
   },
 }
 
