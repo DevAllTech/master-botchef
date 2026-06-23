@@ -1,11 +1,12 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
+import { TEMPLATE_TRIGGERS } from '@botchef/types'
 
 const templateBody = z.object({
   name: z.string().min(1).max(100),
   body: z.string().min(1),
-  trigger: z.string().max(50).optional().nullable(),
+  trigger: z.enum(TEMPLATE_TRIGGERS as unknown as [string, ...string[]]).optional().nullable(),
 })
 
 const templatesRoutes: FastifyPluginAsync = async (fastify) => {
