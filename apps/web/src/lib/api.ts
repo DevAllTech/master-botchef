@@ -154,7 +154,7 @@ export interface Template {
   id: string
   name: string
   body: string
-  trigger: string | null
+  trigger: TemplateTrigger | null
   createdAt: string
   updatedAt: string
 }

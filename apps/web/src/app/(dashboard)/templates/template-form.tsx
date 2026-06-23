@@ -84,7 +84,7 @@ export function TemplateForm({ action, template, onSuccess }: TemplateFormProps)
           Define quando este template será disparado automaticamente.
           <br />
           <span className="text-gray-500">
-            "Boas-vindas" dispara na primeira mensagem do dia do cliente · "Pronto para retirada" = cliente busca no balcão · "Em entrega (delivery)" = motoboy a caminho
+            "Boas-vindas" dispara quando o cliente inicia uma nova conversa (cooldown de 5 horas) · "Pronto para retirada" = cliente busca no balcão · "Em entrega (delivery)" = motoboy a caminho
           </span>
         </p>
       </div>
