@@ -1,28 +1,26 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { prisma } from '../../lib/prisma.js'
 import { MenuChefService } from '../../services/menuchef.js'
+import { UazapiService } from '../../services/uazapi.js'
+import { interpolate } from '../../services/template.js'
 
-/**
- * Formato real dos eventos webhook do UazapiGO.
- *
- * Autenticação: o token da instância vem no BODY (campo `token`),
- * não em header. O UazapiGO não envia x-instance-token.
- */
+const WELCOME_COOLDOWN_MS = 5 * 60 * 60 * 1000 // 5 horas em milissegundos
+
 interface UazapiWebhookBody {
   EventType: 'connection' | 'messages' | string
   instanceName?: string
-  token?: string               // token da instância — usado para identificar o usuário
+  token?: string
   instance?: {
-    status?: string            // "connected" | "disconnected" | "connecting"
+    status?: string
     qrcode?: string
   }
   message?: {
-    chatid?: string            // ex: "5518997922950@s.whatsapp.net" ou "120363...@g.us"
-    text?: string              // texto da mensagem (atalho)
+    chatid?: string
+    text?: string
     content?: {
-      text?: string            // texto alternativo dentro de content
+      text?: string
     }
-    fromMe?: boolean           // true = mensagem enviada pela nossa instância
+    fromMe?: boolean
     isGroup?: boolean
     sender?: string
     senderName?: string
@@ -34,12 +32,11 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/webhooks/uazapi', async (request, reply) => {
     const body = request.body as UazapiWebhookBody
 
-    // O UazapiGO envia o token da instância no corpo do evento
     const instanceToken = body.token
 
     if (!instanceToken) {
       fastify.log.warn('Webhook Uazapi recebido sem token no body')
-      return reply.send({ ok: true }) // não rejeitar — pode ser evento de setup
+      return reply.send({ ok: true })
     }
 
     const user = await prisma.user.findFirst({
@@ -64,7 +61,6 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
         data: { connected },
       })
 
-      // Ao conectar (ou reconectar), re-registra o token no MenuChef
       if (connected && user.menuChefSuffix && user.instanceToken) {
         MenuChefService.registerToken(user.menuChefSuffix, user.instanceToken).catch((err) =>
           fastify.log.error({ err }, 'Falha ao re-registrar token no MenuChef no evento de conexão'),
@@ -83,7 +79,6 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
         return reply.send({ ok: true })
       }
 
-      // Ignorar mensagens de grupos
       if (msg.isGroup) {
         return reply.send({ ok: true })
       }
@@ -98,7 +93,7 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
       const messageText = msg.text ?? msg.content?.text ?? '(mensagem recebida)'
       const direction = msg.fromMe ? 'sent' : 'received'
 
-      await prisma.conversation.upsert({
+      const conversation = await prisma.conversation.upsert({
         where: { userId_phone: { userId: user.id, phone } },
         create: {
           userId: user.id,
@@ -113,6 +108,32 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
           direction,
         },
       })
+
+      // Boas-vindas: apenas em mensagens recebidas (não enviadas por nós)
+      if (!msg.fromMe) {
+        const lastWelcome = conversation.lastWelcomeAt
+        const cooldownPassou = !lastWelcome || (Date.now() - lastWelcome.getTime()) > WELCOME_COOLDOWN_MS
+
+        if (cooldownPassou) {
+          const welcomeTemplate = await prisma.template.findFirst({
+            where: { userId: user.id, trigger: 'welcome' },
+          })
+
+          if (welcomeTemplate) {
+            const message = interpolate(welcomeTemplate.body, {
+              nome: msg.senderName ?? '',
+            })
+
+            // Fire-and-forget: não bloqueia a resposta ao webhook
+            void UazapiService.sendMessage(instanceToken, phone, message)
+              .then(() => prisma.conversation.update({
+                where: { id: conversation.id },
+                data: { lastWelcomeAt: new Date() },
+              }))
+              .catch((err) => fastify.log.error({ err, phone }, 'Falha ao enviar boas-vindas'))
+          }
+        }
+      }
 
       return reply.send({ ok: true })
     }
