@@ -13,11 +13,24 @@ export interface ConversationDTO {
   direction: 'sent' | 'received' | null
 }
 
+export const TEMPLATE_TRIGGERS = [
+  'order_created',
+  'order_confirmed',
+  'order_preparing',
+  'order_ready',
+  'order_delivering',
+  'order_delivered',
+  'order_cancelled',
+  'welcome',
+] as const
+
+export type TemplateTrigger = typeof TEMPLATE_TRIGGERS[number]
+
 export interface TemplateDTO {
   id: string
   name: string
   body: string
-  trigger: string | null
+  trigger: TemplateTrigger | null
   createdAt: string
   updatedAt: string
 }
