@@ -9,6 +9,44 @@
 
 Adicionar um template de boas-vindas automático que dispara quando um cliente manda mensagem inbound via WhatsApp, com cooldown mínimo de 5 horas entre envios para o mesmo contato. Resolve o caso onde o contato começa a conversar às 23h e a virada do dia não deve disparar uma nova boas-vindas.
 
+Aproveita a oportunidade para estabelecer um contrato de tipos sólido entre frontend e backend: a lista de triggers sai de strings soltas para um `const` em `packages/types`, compartilhado pelos dois lados.
+
+---
+
+## Contrato de tipos (`packages/types`)
+
+### Novo export em `packages/types/src/index.ts`
+
+```ts
+export const TEMPLATE_TRIGGERS = [
+  'order_created',
+  'order_confirmed',
+  'order_preparing',
+  'order_ready',
+  'order_delivering',
+  'order_delivered',
+  'order_cancelled',
+  'welcome',
+] as const
+
+export type TemplateTrigger = typeof TEMPLATE_TRIGGERS[number]
+```
+
+### `TemplateDTO` atualizado
+
+```ts
+export interface TemplateDTO {
+  id: string
+  name: string
+  body: string
+  trigger: TemplateTrigger | null  // era: string | null
+  createdAt: string
+  updatedAt: string
+}
+```
+
+Qualquer trigger fora dessa lista passa a ser erro de compilação em ambos os lados.
+
 ---
 
 ## Schema (banco de dados)
@@ -38,6 +76,32 @@ Sem default — `null` indica que o envio ainda não ocorreu. Migration aplicada
 
 ---
 
+## Backend
+
+### Zod schema do route de templates (`apps/api/src/routes/templates.ts`)
+
+```ts
+import { TEMPLATE_TRIGGERS } from '@botchef/types'
+
+const templateBody = z.object({
+  name: z.string().min(1).max(100),
+  body: z.string().min(1),
+  trigger: z.enum(TEMPLATE_TRIGGERS).optional().nullable(),
+})
+```
+
+Antes aceitava qualquer string. Agora valores inválidos retornam 400 automaticamente pelo Zod.
+
+### `DEFAULT_TEMPLATES` tipado (`apps/api/src/services/template.ts`)
+
+```ts
+import { type TemplateTrigger } from '@botchef/types'
+
+export const DEFAULT_TEMPLATES: Partial<Record<TemplateTrigger, string>> = { ... }
+```
+
+---
+
 ## Lógica de disparo (webhook Uazapi)
 
 Condição de envio avaliada a cada mensagem inbound (`fromMe: false`, não grupo):
@@ -61,6 +125,34 @@ Fluxo completo:
    b. Envia via `UazapiService.sendMessage`
    c. Atualiza `conversation.lastWelcomeAt = now()`
 8. Retorna `{ ok: true }` — o envio não bloqueia a resposta ao webhook
+
+---
+
+## Frontend
+
+### `TRIGGER_OPTIONS` derivado do contrato (`apps/web/src/app/(dashboard)/templates/template-form.tsx`)
+
+```ts
+import { TEMPLATE_TRIGGERS } from '@botchef/types'
+
+const TRIGGER_LABELS: Record<typeof TEMPLATE_TRIGGERS[number], string> = {
+  order_created:   'Pedido realizado',
+  order_confirmed: 'Pedido confirmado',
+  order_preparing: 'Pedido em preparo',
+  order_ready:     'Pronto para retirada',
+  order_delivering:'Pedido em entrega (delivery)',
+  order_delivered: 'Pedido entregue',
+  order_cancelled: 'Pedido cancelado',
+  welcome:         'Boas-vindas (início de conversa)',
+}
+
+const TRIGGER_OPTIONS = [
+  { value: '', label: 'Nenhum (manual)' },
+  ...TEMPLATE_TRIGGERS.map(t => ({ value: t, label: TRIGGER_LABELS[t] })),
+]
+```
+
+O label do campo muda de *"Gatilho (status do pedido)"* para *"Gatilho"*.
 
 ---
 
@@ -101,15 +193,19 @@ Ambos são idempotentes — seguros para rodar mais de uma vez.
 
 | Arquivo | Mudança |
 |---|---|
+| `packages/types/src/index.ts` | + `TEMPLATE_TRIGGERS` const + `TemplateTrigger` type; `TemplateDTO.trigger` tipado |
 | `prisma/schema.prisma` | + campo `lastWelcomeAt DateTime?` em `Conversation` |
 | `prisma/seed.ts` | + loop que adiciona template `welcome` nos clientes sem ele |
+| `apps/api/src/services/template.ts` | `DEFAULT_TEMPLATES` tipado com `TemplateTrigger` |
+| `apps/api/src/routes/templates.ts` | `trigger` validado via `z.enum(TEMPLATE_TRIGGERS)` |
 | `apps/api/src/routes/webhooks/uazapi.ts` | + lógica de boas-vindas no handler de `messages` |
 | `apps/api/src/routes/admin.ts` | + template `welcome` no `createMany` de novos clientes |
+| `apps/web/src/app/(dashboard)/templates/template-form.tsx` | `TRIGGER_OPTIONS` derivado do contrato; label do campo atualizado |
 
 ---
 
 ## Fora do escopo
 
-- Interface no painel para visualizar/editar quando o boas-vindas foi enviado por contato
-- Configuração de cooldown (fixo em 5h no código)
+- Interface no painel para visualizar quando o boas-vindas foi enviado por contato
+- Configuração de cooldown pelo painel (fixo em 5h no código)
 - Suporte a outras variáveis além de `{{nome}}` no template de boas-vindas
