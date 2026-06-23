@@ -38,6 +38,7 @@ model Conversation {
   lastMessage   String?
   lastMessageAt DateTime?
   direction     String?
+  lastWelcomeAt DateTime?
 
   updatedAt DateTime @updatedAt
 
