@@ -126,10 +126,12 @@ const uazapiWebhookRoute: FastifyPluginAsync = async (fastify) => {
 
             // Fire-and-forget: não bloqueia a resposta ao webhook
             void UazapiService.sendMessage(instanceToken, phone, message)
-              .then(() => prisma.conversation.update({
-                where: { id: conversation.id },
-                data: { lastWelcomeAt: new Date() },
-              }))
+              .then(() =>
+                prisma.conversation.update({
+                  where: { id: conversation.id },
+                  data: { lastWelcomeAt: new Date() },
+                }).catch((err) => fastify.log.error({ err, phone }, 'Falha ao atualizar lastWelcomeAt após boas-vindas')),
+              )
               .catch((err) => fastify.log.error({ err, phone }, 'Falha ao enviar boas-vindas'))
           }
         }
