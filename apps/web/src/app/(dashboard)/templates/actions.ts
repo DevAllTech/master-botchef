@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { api } from '@/lib/api'
 import { getToken } from '@/lib/auth'
+import type { TemplateTrigger } from '@botchef/types'
 
 export async function createTemplate(_: unknown, formData: FormData) {
   const token = await getToken()
@@ -10,7 +11,7 @@ export async function createTemplate(_: unknown, formData: FormData) {
 
   const name = (formData.get('name') as string)?.trim()
   const body = (formData.get('body') as string)?.trim()
-  const trigger = (formData.get('trigger') as string)?.trim() || null
+  const trigger = ((formData.get('trigger') as string)?.trim() || null) as TemplateTrigger | null
 
   if (!name || !body) return { error: 'Nome e mensagem são obrigatórios.' }
 
@@ -30,7 +31,7 @@ export async function updateTemplate(_: unknown, formData: FormData) {
   const id = formData.get('id') as string
   const name = (formData.get('name') as string)?.trim()
   const body = (formData.get('body') as string)?.trim()
-  const trigger = (formData.get('trigger') as string)?.trim() || null
+  const trigger = ((formData.get('trigger') as string)?.trim() || null) as TemplateTrigger | null
 
   if (!id || !name || !body) return { error: 'Dados inválidos.' }
 

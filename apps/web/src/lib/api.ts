@@ -1,3 +1,5 @@
+import type { TemplateTrigger } from '@botchef/types'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 export class ApiError extends Error {
@@ -160,5 +162,5 @@ export interface Template {
 export interface TemplateInput {
   name: string
   body: string
-  trigger?: string | null
+  trigger?: TemplateTrigger | null
 }
