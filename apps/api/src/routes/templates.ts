@@ -6,7 +6,7 @@ import { TEMPLATE_TRIGGERS } from '@botchef/types'
 const templateBody = z.object({
   name: z.string().min(1).max(100),
   body: z.string().min(1),
-  trigger: z.enum(TEMPLATE_TRIGGERS as unknown as [string, ...string[]]).optional().nullable(),
+  trigger: z.enum([...TEMPLATE_TRIGGERS]).optional().nullable(),
 })
 
 const templatesRoutes: FastifyPluginAsync = async (fastify) => {
