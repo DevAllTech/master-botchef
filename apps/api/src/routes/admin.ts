@@ -80,6 +80,12 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       data: [
         {
           userId: client.id,
+          name: 'Boas-vindas',
+          trigger: 'welcome',
+          body: 'Olá, {{nome}}! 👋 Seja bem-vindo(a)! Em que posso ajudar?',
+        },
+        {
+          userId: client.id,
           name: 'Pedido Realizado',
           trigger: 'order_created',
           body: `🎉 *Olá, {{nome}}! Seu pedido foi realizado com sucesso!*

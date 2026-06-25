@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "prebuild": "pnpm --filter @botchef/types build",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@botchef/types": "workspace:*",
     "@fastify/cors": "^10.0.2",
     "@fastify/jwt": "^9.1.0",
     "@fastify/sensible": "^6.0.3",

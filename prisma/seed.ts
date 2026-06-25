@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+const WELCOME_BODY = 'Olá, {{nome}}! 👋 Seja bem-vindo(a)! Em que posso ajudar?'
+
 async function main() {
   const adminHash = await bcrypt.hash('admin123', 12)
   const clientHash = await bcrypt.hash('cliente123', 12)
@@ -67,9 +69,36 @@ Você será notificado sobre o andamento por aqui. 😊
     })
   }
 
+  // ── Adiciona template de boas-vindas a todos os clientes que não têm ────────
+  const allClients = await prisma.user.findMany({
+    where: { role: 'CLIENT' },
+    select: { id: true },
+  })
+
+  let welcomeCreated = 0
+  for (const c of allClients) {
+    const hasWelcome = await prisma.template.findFirst({
+      where: { userId: c.id, trigger: 'welcome' },
+    })
+    if (!hasWelcome) {
+      await prisma.template.create({
+        data: {
+          userId: c.id,
+          name: 'Boas-vindas',
+          trigger: 'welcome',
+          body: WELCOME_BODY,
+        },
+      })
+      welcomeCreated++
+    }
+  }
+
   console.log('✅ Seed concluído.')
   console.log(`   Admin  → ${admin.email} / admin123`)
   console.log(`   Client → ${client.email} / cliente123`)
+  if (welcomeCreated > 0) {
+    console.log(`   Boas-vindas criado para ${welcomeCreated} cliente(s) existente(s)`)
+  }
 }
 
 main()

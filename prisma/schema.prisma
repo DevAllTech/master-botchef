@@ -38,6 +38,7 @@ model Conversation {
   lastMessage   String?
   lastMessageAt DateTime?
   direction     String?
+  lastWelcomeAt DateTime?
 
   updatedAt DateTime @updatedAt
 
@@ -57,5 +58,5 @@ model Template {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([userId, trigger])
+  @@unique([userId, trigger])
 }

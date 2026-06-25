@@ -7,18 +7,24 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertCircle } from 'lucide-react'
 import type { Template } from '@/lib/api'
+import { TEMPLATE_TRIGGERS } from '@botchef/types'
 
 const TEMPLATE_VARS = ['{{nome}}', '{{restaurante}}', '{{pedido}}', '{{status}}', '{{telefone}}', '{{rua}}', '{{ponto_ref}}', '{{bairro}}', '{{cidade}}', '{{data_pedido}}', '{{taxa_entrega}}', '{{previsao_entrega}}', '{{itens}}', '{{forma_pagamento}}', '{{info_pagamento}}', '{{total}}']
 
+const TRIGGER_LABELS: Record<typeof TEMPLATE_TRIGGERS[number], string> = {
+  order_created:   'Pedido realizado',
+  order_confirmed: 'Pedido confirmado',
+  order_preparing: 'Pedido em preparo',
+  order_ready:     'Pronto para retirada',
+  order_delivering:'Pedido em entrega (delivery)',
+  order_delivered: 'Pedido entregue',
+  order_cancelled: 'Pedido cancelado',
+  welcome:         'Boas-vindas (início de conversa)',
+}
+
 const TRIGGER_OPTIONS = [
   { value: '', label: 'Nenhum (manual)' },
-  { value: 'order_created', label: 'Pedido realizado' },
-  { value: 'order_confirmed', label: 'Pedido confirmado' },
-  { value: 'order_preparing', label: 'Pedido em preparo' },
-  { value: 'order_ready', label: 'Pedido pronto para retirada' },
-  { value: 'order_delivering', label: 'Pedido em entrega (delivery)' },
-  { value: 'order_delivered', label: 'Pedido entregue' },
-  { value: 'order_cancelled', label: 'Pedido cancelado' },
+  ...TEMPLATE_TRIGGERS.map((t) => ({ value: t, label: TRIGGER_LABELS[t] })),
 ]
 
 interface TemplateFormProps {
@@ -60,7 +66,7 @@ export function TemplateForm({ action, template, onSuccess }: TemplateFormProps)
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="trigger">Gatilho (status do pedido)</Label>
+        <Label htmlFor="trigger">Gatilho</Label>
         <select
           id="trigger"
           name="trigger"
@@ -75,10 +81,10 @@ export function TemplateForm({ action, template, onSuccess }: TemplateFormProps)
           ))}
         </select>
         <p className="text-xs text-gray-400">
-          Quando o MenuChef alterar para este status, este template será disparado automaticamente.
+          Define quando este template será disparado automaticamente.
           <br />
           <span className="text-gray-500">
-            "Pronto para retirada" = cliente busca no balcão · "Em entrega (delivery)" = motoboy a caminho
+            "Boas-vindas" dispara quando o cliente inicia uma nova conversa (cooldown de 5 horas) · "Pronto para retirada" = cliente busca no balcão · "Em entrega (delivery)" = motoboy a caminho
           </span>
         </p>
       </div>
