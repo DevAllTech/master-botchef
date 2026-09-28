@@ -8,8 +8,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body className="antialiased">{children}</body>
+    // Browser extensions (e.g. BRy Web PKI) inject attributes into <html>/<body>
+    // before hydration; this only silences attribute mismatches on these two tags.
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   )
 }
