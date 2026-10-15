@@ -1,8 +1,11 @@
-node_modules
-.next
-dist
-.turbo
-*.tsbuildinfo
+# `**/` para pegar também apps/*/ e packages/*/: sem isso, buildar a partir de
+# um checkout com dependências instaladas copia os node_modules do Windows
+# (links do pnpm) para dentro da imagem e quebra o build.
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/*.tsbuildinfo
 .git
 .gitignore
 .env

@@ -1,0 +1,101 @@
+# BotChef no Lightsail, no mesmo servidor do MenuChef (pasta ~/botchef).
+#
+# O MenuChef sobe primeiro (pasta ~/menuchef, projeto `menuchef`): é o Caddy
+# dele que recebe o HTTPS e repassa https://<domínio>/botchef/* para cá, sem o
+# prefixo. Este compose só tem o banco e a API do BotChef:
+#
+#   postgres     PostgreSQL 16, volume `pg-data`, só na rede interna `db`
+#                (sem porta no host, sem saída para a internet)
+#   botchef-api  API Fastify na porta 3001, nas redes `db` e na do MenuChef
+#
+# A API entra na rede do MenuChef (externa, criada pelo compose de lá) para:
+#   - o Caddy alcançar `botchef-api:3001`
+#   - a API do MenuChef chamar o BotChef  (BOTCHEF_API_URL=http://botchef-api:3001)
+#   - o BotChef chamar a API do MenuChef  (MENUCHEF_BASE_URL=http://api:3000)
+#
+# O serviço se chama `botchef-api`, e não `api`, de propósito: o nome do
+# serviço vira nome de DNS em todas as redes em que ele entra. Com `api`, na
+# rede do MenuChef o nome `api` passaria a apontar para os dois containers e o
+# Caddy mandaria parte das chamadas do MenuChef para o BotChef.
+#
+# Uso (no servidor):
+#   cd ~/botchef
+#   docker load < botchef-api-<tag>.tar.gz
+#   # .env com BOTCHEF_API_TAG=<tag> e o resto (modelo em .env.example)
+#   docker compose up -d
+#
+# Nunca rodar `docker compose down -v` aqui: o -v apaga o volume do banco.
+
+name: botchef
+
+# Log do Docker com teto (o padrão do json-file cresce sem limite).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-botchef}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-botchef}
+      TZ: America/Sao_Paulo
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - db
+    mem_limit: 384m
+    logging: *logging
+
+  botchef-api:
+    image: botchef-api:${BOTCHEF_API_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-botchef}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-botchef}
+      JWT_SECRET: ${JWT_SECRET:?defina no .env}
+      API_PORT: "3001"
+      API_HOST: "0.0.0.0"
+      # Base da URL de webhook registrada no Uazapi ao criar a instância
+      # (`${API_PUBLIC_URL}/webhooks/uazapi`). Inclui o /botchef do Caddy.
+      API_PUBLIC_URL: ${API_PUBLIC_URL:?defina no .env}
+      # Origem liberada no CORS: o painel do BotChef na Vercel.
+      WEB_URL: ${WEB_URL:?defina no .env}
+      UAZAPI_BASE_URL: ${UAZAPI_BASE_URL:-}
+      UAZAPI_GLOBAL_TOKEN: ${UAZAPI_GLOBAL_TOKEN:-}
+      MENUCHEF_BASE_URL: ${MENUCHEF_BASE_URL:-http://api:3000}
+      MENUCHEF_BOTCHEF_SECRET: ${MENUCHEF_BOTCHEF_SECRET:-}
+      NODE_ENV: production
+      TZ: America/Sao_Paulo
+    networks:
+      - db
+      - menuchef
+    expose:
+      - "3001"
+    mem_limit: 512m
+    logging: *logging
+
+networks:
+  # Só o banco e a API. `internal`: sem rota para fora; a API sai para a
+  # internet (Uazapi) pela rede do MenuChef.
+  db:
+    internal: true
+  # Rede do compose do MenuChef. Precisa existir antes do `up` (suba o
+  # MenuChef primeiro).
+  menuchef:
+    external: true
+    name: ${MENUCHEF_NETWORK:-menuchef_default}
+
+volumes:
+  pg-data:

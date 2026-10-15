@@ -9,7 +9,8 @@
 # Para atualizar a API após mudanças de código:
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build api
 #
-# O entrypoint da API roda "prisma migrate deploy" antes de iniciar o servidor.
+# O entrypoint da API roda "prisma db push" antes de iniciar o servidor.
+# No Lightsail, junto com o MenuChef, o compose é o de deploy/ (ver lá).
 
 services:
   postgres:
