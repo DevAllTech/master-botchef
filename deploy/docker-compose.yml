@@ -85,6 +85,10 @@ services:
       - "3001"
     mem_limit: 512m
     logging: *logging
+    # Healthcheck vem do Dockerfile; com este label, o `autoheal` do compose do
+    # MenuChef reinicia a API se ela travar (viva, mas sem responder).
+    labels:
+      autoheal: "true"
 
 networks:
   # Só o banco e a API. `internal`: sem rota para fora; a API sai para a
