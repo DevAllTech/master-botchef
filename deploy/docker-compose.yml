@@ -85,6 +85,37 @@ services:
       - "3001"
     mem_limit: 512m
     logging: *logging
+    # Healthcheck vem do Dockerfile; com este label, o `autoheal` do compose do
+    # MenuChef reinicia a API se ela travar (viva, mas sem responder).
+    labels:
+      autoheal: "true"
+
+  # Dump diário do banco (deploy/backup/backup.sh). Grava na pasta de backups
+  # do MenuChef, que o `offsite` de lá copia para o Drive.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-botchef}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-botchef}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_MINUTE: ${BACKUP_MINUTE:-30}
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      TZ: America/Sao_Paulo
+    entrypoint: ["sh", "/backup/backup.sh"]
+    volumes:
+      - ./backup/backup.sh:/backup/backup.sh:ro
+      - ${BACKUP_DIR:-../menuchef/data/backups/botchef}:/backups
+    networks:
+      - db
+    mem_limit: 128m
+    logging: *logging
 
 networks:
   # Só o banco e a API. `internal`: sem rota para fora; a API sai para a
