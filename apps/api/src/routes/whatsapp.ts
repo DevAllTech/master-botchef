@@ -87,6 +87,14 @@ const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
           return reply.send({ connected: false, qrcode: qr.qrcode })
         }
 
+        // Instâncias antigas nasceram sem webhook (ou com a URL do servidor
+        // Windows): regrava a cada tentativa de conexão. Falha aqui não impede
+        // o QR; instância expirada cai no catch abaixo pelo getQRCode.
+        const webhookUrl = `${process.env.API_PUBLIC_URL ?? 'http://localhost:3001'}/webhooks/uazapi`
+        await UazapiService.setWebhook(user.instanceToken, webhookUrl).catch((err) =>
+          fastify.log.warn({ err, userId: user.id }, 'Falha ao gravar webhook no Uazapi'),
+        )
+
         const qr = await UazapiService.getQRCode(user.instanceToken)
 
         if (qr.connected) {
