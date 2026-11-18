@@ -141,7 +141,31 @@ export const UazapiService = {
       throw new Error('Resposta inesperada ao criar instância: ' + JSON.stringify(data))
     }
 
+    // O UazapiGO ignora o campo `webhook` do /instance/create: sem o POST
+    // /webhook a instância nasce sem webhook e não manda evento nenhum.
+    await UazapiService.setWebhook(instanceToken, webhookUrl)
+
     return { instanceId, instanceToken }
+  },
+
+  /**
+   * Grava (ou substitui) o webhook da instância: mensagens e status de conexão.
+   * Idempotente; chamar de novo com a mesma URL não duplica.
+   */
+  async setWebhook(instanceToken: string, url: string): Promise<void> {
+    await uazapiFetch(
+      '/webhook',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          enabled: true,
+          url,
+          events: ['messages', 'connection'],
+          excludeMessages: ['isGroupYes'],
+        }),
+      },
+      instanceToken,
+    )
   },
 
   /**
